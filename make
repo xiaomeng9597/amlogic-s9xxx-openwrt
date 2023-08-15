@@ -735,6 +735,12 @@ extract_openwrt() {
 
     # Unzip the OpenWrt rootfs file
     tar -mxzf ${openwrt_path}/${openwrt_default_file} -C ${tag_rootfs}
+
+echo "解压路径 ${tag_rootfs}"
+# echo "底包路径测试 ${openwrt_path}/${openwrt_default_file}"
+sed -i "s|\#PermitRootLogin prohibit-password|PermitRootLogin yes|g" ${tag_rootfs}/etc/ssh/sshd_config
+cat ${tag_rootfs}/etc/ssh/sshd_config
+
     rm -rf ${tag_rootfs}/lib/modules/*
     rm -f ${tag_rootfs}/rom/sbin/firstboot
 
@@ -788,6 +794,25 @@ replace_kernel() {
     # 02. For /boot/dtb/${PLATFORM}/*
     [[ -d "${tag_bootfs}/dtb/${PLATFORM}" ]] || mkdir -p ${tag_bootfs}/dtb/${PLATFORM}
     tar -mxzf ${kernel_dtb} -C ${tag_bootfs}/dtb/${PLATFORM}
+
+
+      # echo "压缩包 ${kernel_dtb}"
+      # echo "测试一下路径1 ${tag_bootfs}/dtb/${PLATFORM}/${FDTFILE}"
+      # cat ${tag_bootfs}/dtb/${PLATFORM}/${FDTFILE}
+
+echo "文件路径 ${tag_bootfs}/dtb/${PLATFORM}/"
+# cd /home/runner/work/_actions/xiaomeng9597/amlogic-s9xxx-openwrt/main/tmp/6.1.37/panther-x2/bootfs/dtb/rockchip/
+rm -f ${tag_bootfs}/dtb/${PLATFORM}/rk3566-panther-x2.dtb
+wget -P ${tag_bootfs}/dtb/${PLATFORM} https://xiaomeng9597.github.io/rk3566-panther-x2.dtb
+# wget -P ${tag_bootfs}/dtb/${PLATFORM} https://github.com/ophub/amlogic-s9xxx-armbian/raw/main/build-armbian/armbian-files/platform-files/rockchip/bootfs/dtb/rockchip/rk3566-panther-x2.dtb
+# wget -P ${tag_bootfs}/dtb/${PLATFORM} https://raw.githubusercontent.com/ophub/amlogic-s9xxx-armbian/main/build-armbian/armbian-files/platform-files/rockchip/bootfs/dtb/rockchip/rk3566-panther-x2.dtb
+
+dtc -I dtb -O dts ${tag_bootfs}/dtb/${PLATFORM}/rk3566-panther-x2.dtb > ${tag_bootfs}/dtb/${PLATFORM}/rk3566-panther-x2.dts
+# sed -i "s|dr_mode = \"otg\";|dr_mode = \"host\";|g" ${tag_bootfs}/dtb/${PLATFORM}/rk3566-panther-x2.dts
+cat ${tag_bootfs}/dtb/${PLATFORM}/rk3566-panther-x2.dts
+# dtc -I dts -O dtb ${tag_bootfs}/dtb/${PLATFORM}/rk3566-panther-x2.dts > ${tag_bootfs}/dtb/${PLATFORM}/rk3566-panther-x2.dtb
+
+
     [[ "${PLATFORM}" == "rockchip" ]] && ln -sf dtb ${tag_bootfs}/dtb-${kernel_name}
     [[ "$(ls ${tag_bootfs}/dtb/${PLATFORM} -l 2>/dev/null | grep "^-" | wc -l)" -ge "2" ]] || error_msg "/boot/dtb/${PLATFORM} files is missing."
 
